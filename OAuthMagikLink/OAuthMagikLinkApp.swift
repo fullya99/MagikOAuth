@@ -1,7 +1,18 @@
 import SwiftUI
 
+// MARK: - MagikOAuth App
+//
+//  Architecture: MenuBarExtra (SwiftUI native) + FloatingPanel (NSPanel custom)
+//
+//  The MenuBarExtra provides the status item in the menu bar.
+//  Clicking it toggles the FloatingPanel which hosts the ContentView.
+//  A global shortcut (Cmd+Shift+C) also toggles the panel.
+//
+//  Dependencies:
+//    FloatingPanelController → owns URLViewModel + FloatingPanel + GlobalShortcut
+
 @main
-struct OAuthMagikLinkApp: App {
+struct MagikOAuthApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
@@ -9,34 +20,39 @@ struct OAuthMagikLinkApp: App {
     }
 }
 
+// MARK: - App Delegate
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-    var popover: NSPopover!
+    var panelController: FloatingPanelController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Hide dock icon
+        // Hide from dock
         NSApp.setActivationPolicy(.accessory)
 
+        // Setup panel controller
+        panelController = FloatingPanelController()
+        panelController.setupPanel()
+        panelController.setupShortcut()
+
+        // Setup status item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "link.circle.fill", accessibilityDescription: "OAuthMagikLink")
-            button.action = #selector(togglePopover)
+            // Use diamond SF Symbol matching our brand
+            let image = NSImage(systemSymbolName: "diamond.fill", accessibilityDescription: "MagikOAuth")
+            image?.isTemplate = true // Adapts to menu bar appearance (light/dark)
+            button.image = image
+            button.action = #selector(statusItemClicked)
+            button.target = self
         }
-
-        popover = NSPopover()
-        popover.contentSize = NSSize(width: 420, height: 340)
-        popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: ContentView())
     }
 
-    @objc func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            NSApp.activate(ignoringOtherApps: true)
+    @objc func statusItemClicked() {
+        if panelController.isPanelVisible {
+            panelController.hidePanel()
+        } else if let button = statusItem.button {
+            panelController.showPanel(relativeTo: button)
         }
     }
 }

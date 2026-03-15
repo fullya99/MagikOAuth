@@ -1,30 +1,49 @@
-# OAuthMagikLink
+# MagikOAuth
 
-App macOS **menu bar** (SwiftUI, AppKit) — utilitaire qui nettoie les URLs OAuth cassées (retours à la ligne, espaces, encodage) et les reconstruit proprement.
+App macOS **menu bar** (SwiftUI, AppKit) — utilitaire qui nettoie les URLs OAuth cassées (retours à la ligne, espaces, encodage) et les reconstruit proprement. Direction artistique **"Prism / Aurora Dark"**.
 
 ## Architecture
 
 - **Type** : macOS menu bar app (`.accessory` policy, pas de dock icon)
-- **Stack** : Swift 5+ / SwiftUI / AppKit (`NSStatusItem`, `NSPopover`)
-- **Target** : macOS uniquement (utilise `NSPasteboard`, `NSWorkspace`, `NSStatusBar`)
-- **Entry point** : `OAuthMagikLinkApp.swift` → `AppDelegate` gère le status item + popover
-- **UI** : `ContentView.swift` — tout est dans ce fichier (input, parsing, output, actions)
+- **Stack** : Swift 5+ / SwiftUI / AppKit (`MenuBarExtra`, `NSPanel`, `NSStatusItem`)
+- **Target** : macOS 14.0+ (Sonoma)
+- **Design** : "Prism / Aurora Dark" — dark-first, glass custom + Liquid Glass (macOS 26+)
+- **Entry point** : `OAuthMagikLinkApp.swift` → `AppDelegate` + `FloatingPanelController`
+- **State** : `URLViewModel` (@Observable) — owned by `FloatingPanelController`
+
+## Fichiers
+
+| Fichier | Rôle |
+|---------|------|
+| `OAuthMagikLinkApp.swift` | App entry + AppDelegate + status item |
+| `FloatingPanel.swift` | NSPanel subclass + FloatingPanelController |
+| `URLViewModel.swift` | @Observable — toute la logique métier |
+| `ContentView.swift` | Layout principal (header, input, output, actions) |
+| `ParamsView.swift` | Inspection params OAuth syntax-highlighted |
+| `AppTheme.swift` | Design system Aurora Dark (couleurs, fonts, spacings) |
+| `GlassComponents.swift` | GlassModifier + GlassCard + GlassButton (dual path macOS 14/26) |
+| `OAuthParamClassifier.swift` | Mapping param OAuth → couleur Aurora |
+| `ClipboardManager.swift` | NSPasteboard wrapper (protocol-based, testable) |
+| `GlobalShortcut.swift` | Raccourci global ⌘⇧C via NSEvent monitor |
 
 ## Conventions
 
 - UI en français (labels, boutons, placeholders)
-- SwiftUI avec `@State` pour le state local, pas de ViewModel externe
-- Monospaced font (`.monospaced`) pour les URLs et paramètres
-- `.ultraThinMaterial` background pour le popover
+- Dark-first design, `preferredColorScheme(.dark)`
+- `@Observable` ViewModel, pas de `@State` pour la logique
+- SF Mono pour URLs/params, SF Pro Rounded pour le titre
+- Glass dual path : `@available(macOS 26, *)` dans `GlassModifier`
+- Protocol-based utilities pour testabilité (`ClipboardManaging`)
 
 ## Flux principal
 
-1. L'app démarre → se met dans la menu bar (icône `link.circle.fill`)
-2. Au clic → popover s'ouvre, auto-paste depuis le clipboard si URL détectée
-3. L'utilisateur colle/modifie l'URL brute
-4. `cleanURL()` strip newlines/espaces, valide le scheme `http(s)://`
-5. Affichage du résultat + inspection des query params via `URLComponents`
-6. Actions : copier dans le clipboard / ouvrir dans le browser
+1. L'app démarre → icône `diamond.fill` dans la menu bar
+2. Clic ou `⌘⇧C` → FloatingPanel s'ouvre, auto-paste si URL détectée et champ vide
+3. L'utilisateur colle/modifie l'URL brute (bouton "Coller" explicite aussi)
+4. `URLViewModel.cleanURL()` strip newlines/espaces, valide scheme, retourne error state si invalide
+5. Affichage résultat dans GlassCard + toggle inspection params (syntax-highlighted par type OAuth)
+6. Actions : copier `⌘C` / ouvrir `⌘O` / ♡ donation Ko-fi
+7. Panel close → timer 5min → clear state automatique
 
 ## Build & Run
 
@@ -36,12 +55,12 @@ open OAuthMagikLink.xcodeproj
 xcodebuild -project OAuthMagikLink.xcodeproj -scheme OAuthMagikLink -configuration Debug build
 ```
 
-## Améliorations potentielles (ne pas implémenter sans demande explicite)
+## Performance
 
-- Support d'URL schemes custom (non-http)
-- Détection automatique du provider OAuth (Google, Azure AD, GitHub...)
-- Historique des URLs nettoyées
-- Raccourci clavier global pour ouvrir le popover
+- Cible : <5MB RAM idle, 0% CPU idle, <50ms ouverture panel
+- Pas de timer/polling en background
+- Clipboard lu on-demand (ouverture panel uniquement)
+- Parsing temps réel, debounce resize panel seulement
 
 ---
 
