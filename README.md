@@ -2,6 +2,7 @@
   <img src="https://img.shields.io/badge/macOS-14.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-5+-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5+">
   <img src="https://img.shields.io/badge/SwiftUI-000000?style=flat-square&logo=swift&logoColor=white" alt="SwiftUI">
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="MIT License">
   <a href="https://ko-fi.com/fullya"><img src="https://img.shields.io/badge/Ko--fi-Support-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
   <a href="https://github.com/sponsors/fullya99"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=flat-square&logo=githubsponsors&logoColor=white" alt="GitHub Sponsors"></a>
 </p>
@@ -41,6 +42,39 @@ You end up manually cleaning the URL in a text editor, stripping invisible chara
 
 That's it. It lives in your menu bar, out of the way until you need it.
 
+## Install
+
+### Download (recommended)
+
+1. Go to the [**Releases**](../../releases/latest) page
+2. Download **`MagikOAuth-1.0.dmg`**
+3. Open the DMG
+4. Drag **MagikOAuth** into **Applications**
+5. Launch from Applications — it appears in your menu bar as `◇`
+
+> **First launch:** macOS may warn that the app is from an unidentified developer.
+> Right-click the app → **Open** → click **Open** again. You only need to do this once.
+
+### Build from source
+
+Want to tweak the code, add features, or just see how it works? The project is fully open source.
+
+```bash
+# Clone the repo
+git clone https://github.com/fullya99/MagikOAuth.git
+cd MagikOAuth
+
+# Open in Xcode
+open OAuthMagikLink.xcodeproj
+
+# Or build from the command line
+xcodebuild -project OAuthMagikLink.xcodeproj -scheme OAuthMagikLink -configuration Debug build
+```
+
+The built app will be in `~/Library/Developer/Xcode/DerivedData/OAuthMagikLink-*/Build/Products/Debug/MagikOAuth.app`.
+
+**Requirements:** Xcode 15+ and macOS 14.0+ (Sonoma).
+
 ## Features
 
 | Feature | Details |
@@ -68,38 +102,6 @@ state       xYz9k2mN...                  ← rose (security)
 client_id   123456789.apps.google         ← teal (identifiers)
 ```
 
-## Install
-
-### Download
-
-Download the latest `.app` from [Releases](../../releases), move it to `/Applications`, and launch it. MagikOAuth appears in your menu bar as a `◇` icon.
-
-### Build from source
-
-```bash
-git clone https://github.com/fullya99/MagikOAuth.git
-cd MagikOAuth
-xcodebuild -project OAuthMagikLink.xcodeproj -scheme OAuthMagikLink -configuration Release build
-```
-
-> Requires **Xcode 15+** and **macOS 14.0+ (Sonoma)**.
-
-## Architecture
-
-```
-MagikOAuth/
-├── OAuthMagikLinkApp.swift      # App entry + status item
-├── FloatingPanel.swift          # NSPanel + controller
-├── URLViewModel.swift           # @Observable — all logic
-├── ContentView.swift            # Main UI layout
-├── ParamsView.swift             # OAuth param inspector
-├── AppTheme.swift               # Aurora Dark design system
-├── GlassComponents.swift        # Glass UI (dual macOS 14/26)
-├── OAuthParamClassifier.swift   # Param → color mapping
-├── ClipboardManager.swift       # Clipboard read/write/monitor
-└── GlobalShortcut.swift         # ⌘⇧C global hotkey
-```
-
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
@@ -107,6 +109,34 @@ MagikOAuth/
 | `⌘⇧C` | Toggle MagikOAuth panel (global) |
 | `⌘O` | Open cleaned URL in browser |
 | Click on URL | Copy to clipboard |
+
+## Project Structure
+
+```
+OAuthMagikLink/
+├── OAuthMagikLinkApp.swift      # App entry + status item
+├── FloatingPanel.swift          # NSPanel + controller
+├── URLViewModel.swift           # @Observable — all business logic
+├── ContentView.swift            # Main UI layout
+├── ParamsView.swift             # OAuth param inspector
+├── AppTheme.swift               # Aurora Dark design system (colors, fonts, spacing)
+├── GlassComponents.swift        # Glass UI components (dual macOS 14/26 path)
+├── OAuthParamClassifier.swift   # Param key → Aurora color mapping
+├── ClipboardManager.swift       # Clipboard read/write/monitor
+└── GlobalShortcut.swift         # ⌘⇧C global hotkey
+```
+
+### Contributing
+
+1. Fork the repo
+2. Create your branch (`git checkout -b feature/my-feature`)
+3. Make your changes
+4. Build & test (`xcodebuild -scheme OAuthMagikLink build`)
+5. Commit (`git commit -m 'feat: add my feature'`)
+6. Push (`git push origin feature/my-feature`)
+7. Open a Pull Request
+
+All contributions are welcome — bug fixes, new features, design improvements.
 
 ## Roadmap
 
