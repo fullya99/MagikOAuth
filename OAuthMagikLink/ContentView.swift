@@ -1,296 +1,333 @@
 import SwiftUI
 
+// MARK: - Content View
+//
+//  Main panel UI for MagikOAuth.
+//  Pure rendering — all logic lives in URLViewModel.
+//
+//  Layout:
+//    ┌─ Header ──────────────────────────────┐
+//    │  ◇ MagikOAuth              ♡  ⟲  ⌘Q  │
+//    ├───────────────────────────────────────┤
+//    │  PASTE RAW LINK              [Paste]  │
+//    │  ┌─ GlassCard (input) ──────────────┐ │
+//    │  │  https://...                      │ │
+//    │  └──────────────────────────────────┘ │
+//    │                                       │
+//    │  ✓ CLEANED URL            [Inspect]   │
+//    │  ┌─ Click to copy ──────────────────┐ │
+//    │  │  https://clean.url          📋   │ │
+//    │  └──────────────────────────────────┘ │
+//    │                                       │
+//    │  [ ⌘C Copy ]  [ ↗ Open ]              │
+//    └───────────────────────────────────────┘
+
 struct ContentView: View {
-    @State private var inputText: String = ""
-    @State private var cleanedURL: String = ""
-    @State private var copied = false
-    @State private var hoveredParam: String?
-    @State private var showParsed = false
+    @Bindable var viewModel: URLViewModel
 
-    private var parsedParams: [(key: String, value: String)] {
-        guard let comps = URLComponents(string: cleanedURL) else { return [] }
-        return (comps.queryItems ?? []).map { ($0.name, $0.value ?? "") }
-    }
-
-    private var baseURL: String {
-        guard let comps = URLComponents(string: cleanedURL) else { return "" }
-        return "\(comps.scheme ?? "https")://\(comps.host ?? "")\(comps.path)"
-    }
+    /// Ko-fi donation URL
+    private let donationURL = "https://ko-fi.com/fullya"
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             header
-            Divider().opacity(0.5)
+            Divider().background(AppTheme.Background.border).opacity(0.3)
 
-            // Content
-            ScrollView {
-                VStack(spacing: 16) {
-                    inputSection
-                    if !cleanedURL.isEmpty {
-                        outputSection
-                        actionButtons
-                    }
+            VStack(spacing: AppTheme.Spacing.lg) {
+                inputSection
+
+                if viewModel.isValid {
+                    outputSection
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    actionButtons
+                        .transition(.opacity)
                 }
-                .padding(16)
+
+                if let errorMsg = viewModel.errorMessage {
+                    errorBanner(errorMsg)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
             }
+            .padding(AppTheme.Spacing.lg)
         }
-        .frame(width: 440, height: 420)
-        .background(.ultraThinMaterial)
-        .onAppear { pasteFromClipboard() }
+        .frame(width: AppTheme.Panel.width)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxHeight: AppTheme.Panel.maxHeight)
+        .clipped()
+        .background(AppTheme.Background.base)
+        .preferredColorScheme(.dark)
+        .animation(AppTheme.Animation.spring, value: viewModel.isValid)
+        .animation(AppTheme.Animation.spring, value: viewModel.errorState)
     }
 
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "wand.and.stars")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.linearGradient(
-                    colors: [.purple, .blue],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
+        HStack(spacing: AppTheme.Spacing.sm) {
+            Image(systemName: "diamond.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AppTheme.Aurora.titleGradient)
 
-            Text("MagikLink")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+            Text("MagikOAuth")
+                .font(AppTheme.Fonts.title)
+                .foregroundStyle(AppTheme.Aurora.titleGradient)
 
             Spacer()
 
+            // Donation
             Button {
-                inputText = ""
-                cleanedURL = ""
-                copied = false
-                showParsed = false
+                if let url = URL(string: donationURL) {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                Image(systemName: "heart")
+                    .font(.system(size: 11))
+                    .foregroundColor(AppTheme.Aurora.rose.opacity(0.7))
+            }
+            .buttonStyle(.plain)
+            .help("Support MagikOAuth")
+            .accessibilityLabel("Donate")
+
+            // Reset
+            Button {
+                withAnimation(AppTheme.Animation.spring) {
+                    viewModel.reset()
+                }
             } label: {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppTheme.Text.secondary)
             }
             .buttonStyle(.plain)
             .help("Reset")
+            .accessibilityLabel("Reset")
 
+            // Quit
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary.opacity(0.6))
+                    .foregroundColor(AppTheme.Text.tertiary)
             }
             .buttonStyle(.plain)
-            .help("Quitter")
+            .help("Quit MagikOAuth")
+            .accessibilityLabel("Quit application")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, AppTheme.Spacing.lg)
+        .padding(.vertical, AppTheme.Spacing.md)
     }
 
-    // MARK: - Input
+    // MARK: - Input Section
 
     private var inputSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Coller le lien brut", systemImage: "doc.on.clipboard")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
+            HStack {
+                Label("Paste raw link", systemImage: "doc.on.clipboard")
+                    .font(AppTheme.Fonts.captionLabel)
+                    .foregroundColor(AppTheme.Text.secondary)
+
+                Spacer()
+
+                if viewModel.hasInput {
+                    Button {
+                        withAnimation(AppTheme.Animation.fast) {
+                            viewModel.reset()
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 9))
+                            Text("Clear")
+                                .font(AppTheme.Fonts.caption)
+                        }
+                        .foregroundColor(AppTheme.Text.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear input")
+                } else {
+                    Button {
+                        viewModel.pasteFromClipboard()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "clipboard")
+                                .font(.system(size: 9))
+                            Text("Paste")
+                                .font(AppTheme.Fonts.caption)
+                        }
+                        .foregroundColor(AppTheme.Text.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Paste from clipboard")
+                }
+            }
 
             ZStack(alignment: .topLeading) {
-                if inputText.isEmpty {
-                    Text("https://claude.ai/oauth/authorize?code=...")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary.opacity(0.5))
+                if viewModel.inputText.isEmpty {
+                    Text("Paste or copy any OAuth URL...")
+                        .font(AppTheme.Fonts.code)
+                        .foregroundColor(AppTheme.Text.disabled)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 8)
                 }
 
-                TextEditor(text: $inputText)
-                    .font(.system(size: 11, design: .monospaced))
+                TextEditor(text: $viewModel.inputText)
+                    .font(AppTheme.Fonts.code)
+                    .foregroundColor(AppTheme.Text.primary)
                     .scrollContentBackground(.hidden)
                     .padding(4)
-                    .onChange(of: inputText) { _, newValue in
-                        cleanedURL = cleanURL(newValue)
-                        copied = false
-                    }
+                    .accessibilityLabel("URL input field")
+                    .accessibilityHint("Paste or type the OAuth URL to clean")
             }
             .frame(height: 72)
-            .background(Color(.textBackgroundColor).opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(AppTheme.Background.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(
+                        viewModel.errorState != nil && viewModel.errorState != .empty
+                            ? AppTheme.Aurora.rose.opacity(0.3)
+                            : AppTheme.Background.border.opacity(0.5),
+                        lineWidth: 1
+                    )
             )
+            .modifier(ShakeModifier(trigger: viewModel.errorState != nil && viewModel.errorState != .empty && viewModel.errorState != .tooLong))
         }
     }
 
-    // MARK: - Output
+    // MARK: - Output Section
 
     private var outputSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             HStack {
-                Label("Lien reconstruit", systemImage: "checkmark.seal.fill")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.green)
+                Label("Cleaned URL", systemImage: "checkmark.seal.fill")
+                    .font(AppTheme.Fonts.captionLabel)
+                    .foregroundColor(AppTheme.Aurora.teal)
 
                 Spacer()
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showParsed.toggle()
+                    withAnimation(AppTheme.Animation.normal) {
+                        viewModel.showParsed.toggle()
                     }
                 } label: {
                     HStack(spacing: 3) {
-                        Image(systemName: showParsed ? "list.bullet" : "eye")
+                        Image(systemName: viewModel.showParsed ? "link" : "list.bullet")
                             .font(.system(size: 9))
-                        Text(showParsed ? "Params" : "Inspecter")
-                            .font(.system(size: 10))
+                        Text(viewModel.showParsed ? "URL" : "Inspect")
+                            .font(AppTheme.Fonts.caption)
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppTheme.Text.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(viewModel.showParsed ? "Show URL" : "Inspect parameters")
             }
 
-            if showParsed {
-                parsedParamsView
+            if viewModel.showParsed {
+                ParamsView(
+                    baseEndpoint: viewModel.baseEndpoint,
+                    params: viewModel.params
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
             } else {
-                Text(cleanedURL)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(.primary.opacity(0.85))
-                    .lineLimit(4)
-                    .truncationMode(.middle)
-                    .textSelection(.enabled)
+                Button(action: viewModel.copyToClipboard) {
+                    HStack(spacing: AppTheme.Spacing.sm) {
+                        Text(viewModel.cleanedURL)
+                            .font(AppTheme.Fonts.code)
+                            .foregroundColor(AppTheme.Text.primary.opacity(0.85))
+                            .lineLimit(3)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Image(systemName: viewModel.copied ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 10))
+                            .foregroundColor(viewModel.copied ? AppTheme.Aurora.teal : AppTheme.Text.tertiary)
+                    }
+                    .padding(AppTheme.Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(Color.green.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.green.opacity(0.15), lineWidth: 1)
-                    )
-            }
-        }
-    }
-
-    private var parsedParamsView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Base URL
-            HStack(spacing: 6) {
-                Text("endpoint")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.purple)
-                    .frame(width: 90, alignment: .trailing)
-                Text(baseURL)
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundColor(.primary.opacity(0.7))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            .padding(.vertical, 5)
-            .padding(.horizontal, 8)
-
-            ForEach(Array(parsedParams.enumerated()), id: \.offset) { idx, param in
-                Divider().opacity(0.3)
-                HStack(spacing: 6) {
-                    Text(param.key)
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.blue)
-                        .frame(width: 90, alignment: .trailing)
-                        .lineLimit(1)
-                    Text(param.value.removingPercentEncoding ?? param.value)
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(.primary.opacity(0.7))
-                        .lineLimit(2)
-                        .textSelection(.enabled)
+                    .glass()
                 }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .background(idx % 2 == 0 ? Color.primary.opacity(0.02) : .clear)
+                .buttonStyle(.plain)
+                .help("Click to copy")
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .accessibilityLabel("Cleaned URL. Click to copy.")
+            }
+
+            if viewModel.wasTruncated {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 9))
+                    Text("URL truncated (too long)")
+                        .font(AppTheme.Fonts.caption)
+                }
+                .foregroundColor(AppTheme.Aurora.amber)
+                .accessibilityLabel("Warning: URL was truncated because it's too long")
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        )
     }
 
-    // MARK: - Actions
+    // MARK: - Action Buttons
 
     private var actionButtons: some View {
-        HStack(spacing: 10) {
-            Button(action: copyToClipboard) {
-                HStack(spacing: 6) {
-                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 11, weight: .medium))
-                    Text(copied ? "Copie !" : "Copier")
-                        .font(.system(size: 12, weight: .medium))
+        GlassButton(
+            title: "Open in browser",
+            icon: "arrow.up.right",
+            style: .secondary,
+            action: viewModel.openInBrowser
+        )
+        .accessibilityLabel("Open URL in browser")
+        .keyboardShortcut("o", modifiers: .command)
+    }
+
+    // MARK: - Error Banner
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: AppTheme.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(AppTheme.Aurora.rose)
+            Text(message)
+                .font(AppTheme.Fonts.caption)
+                .foregroundColor(AppTheme.Aurora.rose)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Aurora.rose.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(AppTheme.Aurora.rose.opacity(0.15), lineWidth: 1)
+        )
+        .accessibilityLabel("Error: \(message)")
+    }
+}
+
+// MARK: - Shake Animation Modifier
+
+struct ShakeModifier: ViewModifier {
+    var trigger: Bool
+    @State private var shakeOffset: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: shakeOffset)
+            .onChange(of: trigger) { _, newValue in
+                guard newValue else { return }
+                withAnimation(.default) {
+                    let shakeSequence = [0, -6, 6, -4, 4, -2, 2, 0]
+                    for (index, offset) in shakeSequence.enumerated() {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
+                            withAnimation(.linear(duration: 0.04)) {
+                                shakeOffset = CGFloat(offset)
+                            }
+                        }
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 32)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(copied
-                              ? Color.green.opacity(0.15)
-                              : Color.accentColor.opacity(0.12))
-                )
-                .foregroundColor(copied ? .green : .accentColor)
             }
-            .buttonStyle(.plain)
-
-            Button(action: openInBrowser) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 11, weight: .medium))
-                    Text("Ouvrir")
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 32)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.06))
-                )
-                .foregroundColor(.primary.opacity(0.7))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - Logic
-
-    private func cleanURL(_ raw: String) -> String {
-        let cleaned = raw
-            .replacingOccurrences(of: "\n", with: "")
-            .replacingOccurrences(of: "\r", with: "")
-            .replacingOccurrences(of: " ", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard cleaned.hasPrefix("http://") || cleaned.hasPrefix("https://") else {
-            return ""
-        }
-        return cleaned
-    }
-
-    private func copyToClipboard() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(cleanedURL, forType: .string)
-        withAnimation(.easeInOut(duration: 0.15)) { copied = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation { copied = false }
-        }
-    }
-
-    private func openInBrowser() {
-        if let url = URL(string: cleanedURL) {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    private func pasteFromClipboard() {
-        if let clip = NSPasteboard.general.string(forType: .string),
-           clip.contains("http") {
-            inputText = clip
-        }
     }
 }
 
 #Preview {
-    ContentView()
+    ContentView(viewModel: URLViewModel())
+        .frame(width: 460, height: 400)
 }

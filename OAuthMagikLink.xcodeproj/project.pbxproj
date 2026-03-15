@@ -10,6 +10,14 @@
 		AA000001 /* OAuthMagikLinkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010 /* OAuthMagikLinkApp.swift */; };
 		AA000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000011 /* ContentView.swift */; };
 		AA000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000012 /* Assets.xcassets */; };
+		AA100001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100010 /* AppTheme.swift */; };
+		AA100002 /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100011 /* GlassComponents.swift */; };
+		AA100003 /* OAuthParamClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100012 /* OAuthParamClassifier.swift */; };
+		AA100004 /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100013 /* ClipboardManager.swift */; };
+		AA100005 /* URLViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014 /* URLViewModel.swift */; };
+		AA100006 /* GlobalShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100015 /* GlobalShortcut.swift */; };
+		AA100007 /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100016 /* FloatingPanel.swift */; };
+		AA100008 /* ParamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100017 /* ParamsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +26,14 @@
 		AA000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA000020 /* OAuthMagikLink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OAuthMagikLink.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA100010 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		AA100011 /* GlassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponents.swift; sourceTree = "<group>"; };
+		AA100012 /* OAuthParamClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthParamClassifier.swift; sourceTree = "<group>"; };
+		AA100013 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
+		AA100014 /* URLViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLViewModel.swift; sourceTree = "<group>"; };
+		AA100015 /* GlobalShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcut.swift; sourceTree = "<group>"; };
+		AA100016 /* FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanel.swift; sourceTree = "<group>"; };
+		AA100017 /* ParamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParamsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -34,6 +50,14 @@
 			children = (
 				AA000010 /* OAuthMagikLinkApp.swift */,
 				AA000011 /* ContentView.swift */,
+				AA100017 /* ParamsView.swift */,
+				AA100014 /* URLViewModel.swift */,
+				AA100016 /* FloatingPanel.swift */,
+				AA100010 /* AppTheme.swift */,
+				AA100011 /* GlassComponents.swift */,
+				AA100012 /* OAuthParamClassifier.swift */,
+				AA100013 /* ClipboardManager.swift */,
+				AA100015 /* GlobalShortcut.swift */,
 				AA000012 /* Assets.xcassets */,
 				AA000013 /* Info.plist */,
 			);
@@ -113,6 +137,14 @@
 			files = (
 				AA000001 /* OAuthMagikLinkApp.swift in Sources */,
 				AA000002 /* ContentView.swift in Sources */,
+				AA100001 /* AppTheme.swift in Sources */,
+				AA100002 /* GlassComponents.swift in Sources */,
+				AA100003 /* OAuthParamClassifier.swift in Sources */,
+				AA100004 /* ClipboardManager.swift in Sources */,
+				AA100005 /* URLViewModel.swift in Sources */,
+				AA100006 /* GlobalShortcut.swift in Sources */,
+				AA100007 /* FloatingPanel.swift in Sources */,
+				AA100008 /* ParamsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -178,8 +210,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.fullya.OAuthMagikLink;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.fullya.MagikOAuth;
+				PRODUCT_NAME = MagikOAuth;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -201,8 +233,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.fullya.OAuthMagikLink;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.fullya.MagikOAuth;
+				PRODUCT_NAME = MagikOAuth;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
