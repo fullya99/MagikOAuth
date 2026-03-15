@@ -1,0 +1,8 @@
+{
+  "name": "gstack-orchestrator",
+  "version": "1.0.0",
+  "description": "Orchestration layer for gstack: coordinates plan, review, ship, browse, QA, and retro skills into automated workflows",
+  "agents": "./agents",
+  "commands": "./commands",
+  "hooks": "./hooks/hooks.json"
+}
